@@ -145,25 +145,35 @@ AA_SA_VOL = dict(zip(['ALA', 'ARG', 'ASP', 'ASN', 'CYS', 'GLU', 'GLN', 'GLY', 'H
                        170.,  200.,  185.,  210.,  145.,  115.,  140.,  255.,  230.,  155.]))
 
 
-def get_relative_solvent_accessibility(pdb_id, mapped_residues, aa_surface_area=AA_SA_VOL):
+def get_relative_solvent_accessibility(pdb_id, mapped_residue_list, aa_surface_area=AA_SA_VOL):
     """
     Run DSSP on a PDB file and return the resulting AtomGroup
     
-    :param pdb_id: String containing PDB ID
-    :param mapped_residues: List containing all residues for current structure that were mapped to Uniprot sequence
-    :param aa_surface_area: Dictionary with amino acid names as keys and total surface area as values
+    Parameters
+    ----------
+    pdb_id
+        string containing PDB ID
+    mapped_residue_list
+        list of mapped residues
+    aa_surface_area
+        dictionary with amino acid abbreviations as keys and surface area 
+        calculations as values
+
+    Returns
+    -------
+    a numpy array containing relative solvent accessibility measurement for residues
     """
     
     pdb_file = '.'.join([pdb_id, 'pdb.gz'])
     dssp_file = '.'.join([pdb_id, 'dssp'])
 
-    # DSSP doesn't work with CIF-based atom groups, so must re-run here
+    # DSSP doesn't seem to work with CIF-based atom groups, so must re-run here
     structure = pd.parsePDB(pdb_id, stderr=False)
     pd.execDSSP(pdb_file) # TODO: how to silence output from the DSSP functions
     pd.parseDSSP(dssp_file, structure)
     
     # File cleanup
-    # TODO: how to redirect prody file output to use tmpdir
+    # TODO: how to redirect prody file output to use tmpdir?
     file_ext_list = ['dssp', 'pdb.gz', 'pdb']
     for ext in file_ext_list:
         filename = Path('.'.join([pdb_id, ext]))
@@ -174,14 +184,16 @@ def get_relative_solvent_accessibility(pdb_id, mapped_residues, aa_surface_area=
     rel_acc_list = list()
     
     for res in structure.iterResidues():
-        valid_pdb_resi = res.getResindex() in mapped_residues
+        valid_pdb_resi = res.getResindex() in mapped_residue_list
         valid_dssp_resi = res.getData('dssp_resnum')[0] != 0
 
         if valid_pdb_resi & valid_dssp_resi:
-            resn = res.getResname()
             surface_accessibilty = res.getData('dssp_acc')[0]
+            resn = res.getResname()
             rel_surface_accessibilty = surface_accessibilty / aa_surface_area[resn]
             rel_acc_list.append(rel_acc_list)
+        if valid_pdb_resi & (not valid_dssp_resi):
+            rel_acc_list.append(-1)
             
     return np.array(rel_acc_list)
 
@@ -262,7 +274,7 @@ class StructureAnnotation:
     perturbation_effectiveness: np.ndarray
     perturbation_sensitivity: np.ndarray
     mechanical_stiffness: np.ndarray
-    relative_solvent_accessibility: np.ndarray
+    # relative_solvent_accessibility: np.ndarray
     hinge_sites: list
     anm: pd.dynamics.anm.ANM
     gnm: pd.dynamics.gnm.GNM
@@ -284,8 +296,8 @@ class StructureAnnotation:
                                                   numbers_to_colors(self.perturbation_sensitivity[indices]))
         mapping["Mechanical Stiffness"] = zip(uniprot_residues, np.round(self.mechanical_stiffness[indices], 2),
                                               numbers_to_colors(self.mechanical_stiffness[indices]))
-        mapping["Relative Solvent Accessibility"] = zip(residues, np.round(self.relative_solvent_accessibility[indices], 2),
-                                                        numbers_to_colors(self.relative_solvent_accessibility[indices]))
+        # mapping["Relative Solvent Accessibility"] = zip(uniprot_residues, np.round(self.relative_solvent_accessibility[indices], 2),
+        #                                                 numbers_to_colors(self.relative_solvent_accessibility[indices]))
         for i in range(len(self.hinge_sites)):
             mapping[f"Hinge sites for mode {i}"] = [(self.residue_mapper[self.calphas[r].getResnum()],
                                                      f"mode {i}",
@@ -316,7 +328,7 @@ def get_annotations_single(uniprot_id, pdb_id, chain, residue_mapper: dict, n_mo
                                effectiveness, 
                                sensitivity, 
                                get_stiffness(anm, calphas, n_modes),
-                               get_relative_solvent_accessibility(pdb_id, list(residue_mapper.keys())),
+                               #get_relative_solvent_accessibility(pdb_id, list(residue_mapper.keys())),
                                hinge_sites, anm, gnm)
 
 
