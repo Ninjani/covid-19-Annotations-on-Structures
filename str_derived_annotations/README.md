@@ -5,6 +5,8 @@ Dependencies
 * `prody`
 * `matplotlib`
 * `dataclasses`
+* `dssp`
+* `requests`
 
 
 For a set of related PDB IDs (e.g. same protein crystallized with different ligands)
