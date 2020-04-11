@@ -4,6 +4,7 @@ Dependencies
 * `numpy`
 * `prody`
 * `matplotlib`
+* `dataclasses`
 
 
 For a set of related PDB IDs (e.g. same protein crystallized with different ligands)
@@ -17,6 +18,7 @@ For a single PDB ID, predict (according to elastic network models)
   * Effectiveness of each residue in perturbing other residues
   * Sensitivity of each residue to perturbation
 * Mechanical stiffness
+* Relative solvent accessibility
 * Hinge sites connecting two stretches of structure that may move independently
 
 These annotations can be written out as structure annotation and visualized in the beta SWISS-MODEL annotation website (see `example_usage.py` and the annotations folder for examples).
