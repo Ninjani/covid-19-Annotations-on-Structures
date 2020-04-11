@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import numpy as np
 from str_derived_annotations import annotate, parse_pdbe
 
 
@@ -12,12 +12,8 @@ def create_csv_file(annotations, csv_dir):
     annotations
         Annotations object
     csv_dir
-        String containing output directory for CSV files
-    """
-    csv_dir = Path(csv_dir)
-    if not csv_dir.exists:
-        csv_dir.mkdir()
-        
+        Path containing output directory for CSV files
+    """ 
     keys = ['enm_fluctuations', 'perturbation_effectiveness', 'perturbation_sensitivity', 
             'mechanical_stiffness', 'relative_solvent_accessibility']
         
@@ -34,7 +30,10 @@ def create_csv_file(annotations, csv_dir):
     n_rows = len(data[keys[0]])
 
     col_names = list(data.keys())
-    nice_title = "_".join([data_dict['pdb_id'], data_dict['uniprot_id'], 'chain', data_dict['']]
+    nice_title = "_".join([data_dict['uniprot_id'], data_dict['pdb_id']])
+    if 'chain' in data_dict:
+        nice_title += "_".join(['', 'chain', data_dict['chain']])
+        
     with open(csv_dir / f"{nice_title}.csv", "w") as f:
         f.write(','.join(col_names) + "\n")
         for row in range(n_rows):
@@ -50,14 +49,11 @@ def example_ensemble():
     residue_mapping, _ = reference_mapper.map_to_pdb(pdb_info_list[0])
     annotations = annotate.get_annotations_ensemble(uniprot_id, pdb_chain_pairs, residue_mapping)
 
-    # Write output as CSV file
-    create_csv_file(annotations, csv_dir)
-    
     # Make post=True and change email to post to beta SWISS MODEL website
     annotators, titles, urls = annotate.make_swiss_model_annotators(annotations, post=False, email=None)
     annotation_dir = Path("str_derived_annotations/annotations")
-    if not annotation_dir.exists:
-        annotation_dir.mkdir()
+    if not annotation_dir.exists():
+        annotation_dir.mkdir(parents=True)
     for i, (title, annotator) in enumerate(zip(titles, annotators)):
         nice_title = '_'.join(title.split())
         with open(annotation_dir / f"{nice_title}.txt", "w") as f:
@@ -77,13 +73,16 @@ def example_single():
     annotations = annotate.get_annotations_single(uniprot_id, pdb_id, pdb_info["chain_id"], residue_mapping, n_modes=6)
 
     # Write output as CSV file
+    csv_dir = Path("str_derived_annotations/csv")
+    if not csv_dir.exists():
+        csv_dir.mkdir(parents=True)
     create_csv_file(annotations, csv_dir)
     
     # Make post=True and change email to post to beta SWISS MODEL website
     annotators, titles, urls = annotate.make_swiss_model_annotators(annotations, post=False, email=None)
     annotation_dir = Path("str_derived_annotations/annotations")
-    if not annotation_dir.exists:
-        annotation_dir.mkdir()
+    if not annotation_dir.exists():
+        annotation_dir.mkdir(parents=True)
     for i, (title, annotator) in enumerate(zip(titles, annotators)):
         nice_title = '_'.join(title.split())
         with open(annotation_dir / f"{nice_title}.txt", "w") as f:
