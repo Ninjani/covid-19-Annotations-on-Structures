@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [    
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "pythonPath": "${config:python.pythonPath}",
+            // "args": ["--config_path", "/workspace/mass_spec_seq2seq/params/seq2seq_basic.yaml"],
+            // "envFile": "${workspaceRoot}/.vscode/env",
+            "env": 
+            {
+                "PYTHONPATH": "${workspaceRoot}"
+            },
+        },
+        {
+            "name": "Python: example_usage",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/str_derived_annotations/example_usage.py",
+            "console": "integratedTerminal",
+            "pythonPath": "${config:python.pythonPath}",
+            "env": 
+            {
+                "PYTHONPATH": "${workspaceRoot}"
+            },
+        },
+    ]
+}
