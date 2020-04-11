@@ -165,7 +165,7 @@ def get_relative_solvent_accessibility(pdb_id, chain_id, residue_mapper, aa_surf
     -------
     a numpy array containing relative solvent accessibility measurement for residues
     """
-    
+
     mapped_residue_list = list(residue_mapper.keys())
     pdb_file = '.'.join([pdb_id, 'pdb.gz'])
     dssp_file = '.'.join([pdb_id, 'dssp'])
@@ -185,23 +185,21 @@ def get_relative_solvent_accessibility(pdb_id, chain_id, residue_mapper, aa_surf
 
     # Gather results
     rel_acc_list = list()
-
-    for res in structure.iterResidues():
-        valid_pdb_resi = res.getResindex() in mapped_residue_list
-        valid_dssp_resi = res.getData('dssp_resnum')[0] != 0
-
-        if valid_pdb_resi:
-            if valid_dssp_resi:
-                surface_accessibilty = res.getData('dssp_acc')[0]
-                resn = res.getResname()
+    for res in mapped_residue_list:
+        dssp_resi = structure[chain_id, res]
+        if dssp_resi is not None:
+            valid_dssp = dssp_resi.getData('dssp_resnum')[0] != 0
+            if valid_dssp:
+                surface_accessibilty = dssp_resi.getData('dssp_acc')[0]
+                resn = dssp_resi.getResname()
                 rel_surface_accessibilty = surface_accessibilty / aa_surface_area[resn]
                 rel_acc_list.append(rel_surface_accessibilty)
             else:
-                # Case where a residue is invalid from DSSP
                 rel_acc_list.append(-1)
-                
-    return np.array(rel_acc_list)
+        else:
+            rel_acc_list.append(-1)
 
+    return np.array(rel_acc_list)
 
 def numbers_to_colors(numbers, cmap="jet", log=False):
     """
