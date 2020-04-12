@@ -154,7 +154,7 @@ def get_relative_solvent_accessibility(pdb_id, chain_id, residue_mapper, aa_surf
     pdb_id
         string containing PDB ID
     chain_id
-        string containing the selected chain ID(s)
+        string containing the selected chain ID(s). Can be None for all chains.
     residue_mapper
         dictionary of residue - unitprot mappings
     aa_surface_area
@@ -167,23 +167,32 @@ def get_relative_solvent_accessibility(pdb_id, chain_id, residue_mapper, aa_surf
     """
 
     mapped_residue_list = list(residue_mapper.keys())
-    pdb_file = '.'.join([pdb_id, 'pdb.gz'])
-    dssp_file = '.'.join([pdb_id, 'dssp'])
 
-    # DSSP doesn't seem to work with CIF-based atom groups, so must re-run here
+    # DSSP doesn't work with CIF-based atom groups, so must re-run here
     structure = pd.parsePDB(pdb_id, chain=chain_id)
+    
+    if chain_id is not None:
+        pdb_gz_file = '.'.join([pdb_id + f'_chain{chain_id}', 'pdb.gz'])
+        pdb_file = '.'.join([pdb_id + f'_chain{chain_id}', 'pdb'])
+        dssp_file = '.'.join([pdb_id + f'_chain{chain_id}', 'dssp'])
+        pd.writePDB(pdb_file, structure) # Must write file with only chain selections
+    else:
+        pdb_gz_file = '.'.join([pdb_id, 'pdb.gz'])
+        pdb_file = '.'.join([pdb_id, 'pdb'])
+        dssp_file = '.'.join([pdb_id, 'dssp'])
+        
     pd.execDSSP(pdb_file) # TODO: how to silence output from the DSSP functions
     pd.parseDSSP(dssp_file, structure)
 
     # File cleanup
-    # TODO: how to redirect prody file output to use tmpdir?
-    file_ext_list = ['dssp', 'pdb.gz', 'pdb']
-    for ext in file_ext_list:
-        filename = Path('.'.join([pdb_id, ext]))
+    # TODO: redirect prody file output to use tmpdir?
+    file_list = [pdb_gz_file, pdb_file, dssp_file]
+    for fil in file_list:
+        filename = Path(fil)
         if filename.exists():
             filename.unlink()
 
-    # Gather results
+    # Gather results -- currently using -1 for any missing residues
     rel_acc_list = list()
     for res in mapped_residue_list:
         dssp_resi = structure[chain_id, res]
@@ -223,8 +232,7 @@ def numbers_to_colors(numbers, cmap="jet", log=False):
     norm = mpl_colors.Normalize(vmin=np.min(numbers), vmax=np.max(numbers))
     colormap = cm.get_cmap(cmap)
     return [colormap(norm(n))[:3] for n in numbers]
-
-
+        
 @dataclass
 class EnsembleAnnotation:
     pdb_id: str
