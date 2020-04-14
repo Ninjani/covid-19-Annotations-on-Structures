@@ -138,6 +138,8 @@ def get_stiffness(enm, calphas, n_modes=6):
 
 
 # Amino acid solvent accessibility measurements
+# C. Chotia, The Nature of the Accessible and Buried Surfaces in Proteins, J. Mol. Biol., 105(1975)1-14.
+# https://www.sciencedirect.com/science/article/abs/pii/0022283676901911?via%3Dihub
 # http://prowl.rockefeller.edu/aainfo/volume.htm
 AA_SA_VOL = dict(zip(['ALA', 'ARG', 'ASP', 'ASN', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 
                       'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL'],
