@@ -1,5 +1,5 @@
 #!/bin/bash
 
 conda activate -n annotations
-jupyter-lab --config=env/jupyter_notebook_config.py
+jupyter-lab --config=str_derived_annotations/env/jupyter_notebook_config.py
 
