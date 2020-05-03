@@ -81,10 +81,10 @@ def get_sift_xml(pdb_id: str) -> ET.Element:
     return ET.fromstring(gzip.decompress(content).decode("utf-8"))
 
 
-def get_uniprot_to_pdb_mapping(pdb_id: str):
+def get_pdb_to_uniprot_mapping(pdb_id: str):
     """
-    Maps from UniProt residue number to PDB residue number for each chain
-    Missing residues are indicated as "null"
+    Maps from PDB residue number to UniProt residue number for each chain
+    Missing residues are ignored
 
     Parameters
     ----------
@@ -104,7 +104,8 @@ def get_uniprot_to_pdb_mapping(pdb_id: str):
                 pdb_resnum = pdb_entry.attrib["dbResNum"]
                 pdb_chain_id = pdb_entry.attrib["dbChainId"]
                 uniprot_resnum = [x for x in residue.iter() if "dbSource" in x.attrib and x.attrib["dbSource"] == "UniProt"][0].attrib["dbResNum"]
-                chains[pdb_chain_id][int(uniprot_resnum)] = pdb_resnum
+                if pdb_resnum != "null":
+                    chains[pdb_chain_id][int(pdb_resnum)] = int(uniprot_resnum)
             except IndexError:
                 continue
     return chains
@@ -166,7 +167,7 @@ def main():
     print(len(mapping.uniprot_sequence))
     for x in mapping.search_pdbs_by_protein_name("Spike protein S1"):
         print(x)
-    print(get_uniprot_to_pdb_mapping("6vsb"))
+    print(get_pdb_to_uniprot_mapping("6vsb"))
 
 
 if __name__ == "__main__":
