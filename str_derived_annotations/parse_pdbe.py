@@ -3,7 +3,12 @@ from pathlib import Path
 
 import intervaltree as it
 import prody as pd
+
 import requests as rq
+import gzip
+import xml.etree.ElementTree as ET
+import ftplib
+
 
 from utils.uniprot import seq_from_ac
 
@@ -144,13 +149,45 @@ class UniProtBasedMapping:
                 residue_mapping[index_1] = i + unp_start
         return residue_mapping, mismatches
 
+    def _get_sift_xml(self, pdb_id: str) -> ET.Element:
+        ftp_address = "ftp.ebi.ac.uk"
+        ftp = ftplib.FTP(ftp_address)
+        ftp.login()
+        filepath = f"/pub/databases/msd/sifts/split_xml/{pdb_id[1:3]}"
+        filename = f"{pdb_id}.xml.gz"
+        ftp.cwd(filepath)
+        content = list()
+        ftp.retrbinary(f"RETR {filename}", content.append)
+        ftp.close()
+        content = b''.join(content)
+        return ET.fromstring(gzip.decompress(content).decode("utf-8"))
+
+    def get_mapping_by_pdb_id(self, pdb_id: str):
+        sift_xml = self._get_sift_xml(pdb_id)
+        entities = [x for x in sift_xml.iter() if "entity" in x.tag]
+        chains = dict()
+        for ent in entities:
+            chains[ent.attrib["entityId"]] = list()
+            for residue in [x for x in ent.iter() if "residue" in x.tag and not x.tag.endswith("Detail")]:
+                pdb_resnum = residue.attrib["dbResNum"]
+                pdb_resname = residue.attrib["dbResName"]
+                try:
+                    uniprot_resnum = [x for x in residue.iter() if "dbCoordSys" in x.attrib and x.attrib["dbCoordSys"] == "UniProt"][0].attrib["dbResNum"]
+                    chains[ent.attrib["entityId"]].append(dict(pdbResNum=pdb_resnum,
+                                                               pdbResName=pdb_resname,
+                                                               uniprotResNum=uniprot_resnum))
+                except IndexError:
+                    continue
+        return chains
 
 if __name__ == "__main__":
     mapping = UniProtBasedMapping("P0DTC2")
     mapping.list_available_annotations()
     print(mapping.uniprot_sequence)
     print(len(mapping.uniprot_sequence))
-    print(mapping.search_pdbs_by_protein_name("Spike protein S1"))
+    for x in mapping.search_pdbs_by_protein_name("Spike protein S1"):
+        print(x)
+    print(mapping.get_mapping_by_pdb_id("6vsb"))
     # mapping.protein_annotation_intervals["3C-like proteinase"]
     # print(mapping.data["6vxx"])
     # print(mapping.search_pdb_by_id("6lu7"))
