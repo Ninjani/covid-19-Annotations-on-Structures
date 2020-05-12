@@ -2,7 +2,8 @@ from pathlib import Path
 
 import numpy as np
 
-from str_derived_annotations import annotate, parse_pdbe
+from str_derived_annotations import annotate
+from utils import parse_pdbe
 
 
 def create_csv_file(annotations, csv_dir):
